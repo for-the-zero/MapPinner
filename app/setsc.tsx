@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { Appbar, Button, Dialog, List, Portal, Text, TextInput } from 'react-native-paper';
-import ScreenWrapper from './files2import/ScreenWrapper';
+import ScreenWrapper from './tools/ScreenWrapper';
 
 import i18n from './i18n/i18n';
 

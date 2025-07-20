@@ -1,6 +1,6 @@
 import React from 'react';
 import { Appbar } from 'react-native-paper';
-import ScreenWrapper from './files2import/ScreenWrapper';
+import ScreenWrapper from './tools/ScreenWrapper';
 
 import i18n from './i18n/i18n';
 

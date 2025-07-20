@@ -35,10 +35,17 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c0f4b7cd-ea3f-4c87-9d06-2744485e9058"
+      }
     }
   }
 }
