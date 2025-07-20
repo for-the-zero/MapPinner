@@ -1,0 +1,16 @@
+{
+    "WELCOME": "欢迎使用 MapPinner",
+    "TITLE_MAP": "地图",
+    "TITLE_ROUTE": "路线",
+    "TITLE_SETTINGS": "设置",
+    "MAP_SELECTROUTE": "选择路线",
+    "MAP_LOCATION": "定位",
+    "MAP_SCREENSHOT": "截图",
+    "MAP_SEARCH": "搜索",
+    "MAP_MISSING_API_KEY": "未填写 API 密钥",
+    "MAP_MISSING_API_KEY_DESC": "请在设置中填写 Maptiler API 密钥",
+    "DIALOG_CONFIRM": "确认",
+    "SETTINGS_MAP": "地图设置",
+    "SETTINGS_MAP_KEY": "更改 Maptiler API 密钥",
+    "SETTINGS_MAP_KEY_DESC": "应用更改需要重启应用"
+}

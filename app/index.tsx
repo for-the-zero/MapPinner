@@ -9,11 +9,11 @@ import {
 } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import i18n from '../assets/i18n';
 import MapScreen from './mapsc';
 import RoutesScreen from './routessc';
 import SettingsScreen from './setsc';
-const texts = i18n['zh-CN']; //TODO:
+
+import i18n from './i18n/i18n';
 
 const DrawerNav = createDrawerNavigator();
 
@@ -29,17 +29,24 @@ export default function App() {
     const styles = StyleSheet.create({
         drawer: {
             paddingTop: insets.top,
+            backgroundColor: paperTheme.colors.surface,
         }
     });
     return (
         <PaperProvider theme={paperTheme}>
             <DrawerNav.Navigator
+                screenOptions={{
+                    headerShown: false,
+                    drawerStyle: {
+                        backgroundColor: paperTheme.colors.surface
+                    }
+                }}
                 drawerContent={({ navigation, state }) => {
                     const currentRoute = state.routes[state.index].name;
                     return(
-                        <Drawer.Section title={texts.WELCOME} style={styles.drawer}>
+                        <Drawer.Section title={i18n.t("WELCOME")} style={styles.drawer}>
                             <Drawer.Item
-                                label={texts.TITLE_MAP}
+                                label={i18n.t("TITLE_MAP")}
                                 icon='map'
                                 active={currentRoute === 'Map'}
                                 onPress={() => {
@@ -47,7 +54,7 @@ export default function App() {
                                 }}
                             />
                             <Drawer.Item
-                                label={texts.TITLE_ROUTE}
+                                label={i18n.t("TITLE_ROUTE")}
                                 icon='map-marker-distance'
                                 active={currentRoute === 'Routes'}
                                 onPress={() => {
@@ -55,7 +62,7 @@ export default function App() {
                                 }}
                             />
                             <Drawer.Item
-                                label={texts.TITLE_SETTINGS}
+                                label={i18n.t("TITLE_SETTINGS")}
                                 icon='cog-outline'
                                 active={currentRoute === 'Settings'}
                                 onPress={() => {
@@ -65,7 +72,6 @@ export default function App() {
                         </Drawer.Section>
                     )
                 }}
-                screenOptions={{ headerShown: false }}
             >
                 <DrawerNav.Screen name="Map" component={MapScreen} />
                 <DrawerNav.Screen name="Routes" component={RoutesScreen} />
