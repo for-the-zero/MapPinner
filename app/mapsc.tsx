@@ -1,50 +1,51 @@
-import { Camera, CameraRef, MapView, PointAnnotation } from "@maplibre/maplibre-react-native";
+import { Camera, CameraRef, MapView, MapViewRef, PointAnnotation } from "@maplibre/maplibre-react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import * as MediaLibrary from 'expo-media-library';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Button, Dialog, FAB, Portal, Snackbar, Text, Tooltip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from './i18n/i18n';
 
-const MapTilerMap = React.forwardRef<CameraRef, { centerCoordinate?: [number, number] }>(
-    ({ centerCoordinate }, ref) => {
+type MapTilerMapProps = {
+    camRef: React.RefObject<CameraRef | null>;
+    centerCoordinate?: [number, number];
+};
+const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
+    ({ camRef, centerCoordinate }, ref) => {
         const [apiKey, setApiKey] = React.useState('');
         React.useEffect(() => {
             const fetchApiKey = async () => {
                 const key = await AsyncStorage.getItem('map_key');
-                if(key){setApiKey(key);};
+                if (key) setApiKey(key);
             };
             fetchApiKey();
         }, []);
 
         return (
-            <View style={{ flex: 1, marginBottom: 80, }}>
+            <View style={{ flex: 1, marginBottom: 80 }}>
                 <MapView
-                    style={{flex: 1,}}
-                    mapStyle={
-                        `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`
-                    }
+                    ref={ref}
+                    style={{ flex: 1 }}
+                    mapStyle={`https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`}
                     logoEnabled={false}
                     attributionPosition={{ bottom: 8, right: 8 }}
                 >
                     <Camera
-                        ref={ref}
+                        ref={camRef}
                         zoomLevel={14}
                         centerCoordinate={centerCoordinate}
                         animationMode="flyTo"
                         animationDuration={1000}
                     />
                     {centerCoordinate && (
-                        <PointAnnotation
-                            id="user-location-marker"
-                            coordinate={centerCoordinate}
-                        >
+                        <PointAnnotation id="user-location-marker" coordinate={centerCoordinate}>
                             <View
                                 style={{
                                     width: 15,
                                     height: 15,
-                                    borderRadius: 15 / 2,
+                                    borderRadius: 7.5,
                                     backgroundColor: '#007aff',
                                     borderWidth: 2,
                                     borderColor: 'white',
@@ -135,24 +136,24 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 accuracy: Location.Accuracy.Highest,
             });
             console.log(location);
-        }catch (error){
-            console.error(error);
-            try{
+        } catch (error) {
+            console.error('Highest:' + error);
+            try {
                 location = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.High,
                 });
-            }catch (error){
-                console.error(error);
-                try{
+            } catch (error) {
+                console.error('High:' + error);
+                try {
                     location = await Location.getLastKnownPositionAsync({});
-                }catch (error){
-                    console.error(error);
+                } catch (error) {
+                    console.error('Last known:' + error);
                     setShowLocationPmsSB(true);
                     return;
                 };
             };
         };
-        if(location){
+        if (location) {
             setLocation(location);
             setIsLocating(false);
             cameraRef.current?.setCamera({
@@ -172,6 +173,22 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         getUserLocation();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
     //  暴   力   解   决   (别删上面那个哦，小心eslint给你报个错，看起来可不舒服了)
+
+    const [showShotSB, setShowShotSB] = React.useState(false);
+    const mapRef = React.useRef<MapViewRef>(null);
+    const takeScreenshot = async () => {
+        if (!mapRef.current) return;
+        try {
+            const uri = await mapRef.current.takeSnap(true);
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status === 'granted') {
+                await MediaLibrary.saveToLibraryAsync(uri);
+                setShowShotSB(true);
+            };
+        } catch (error) {
+            console.error('Screenshot failed:', error);
+        };
+    };
 
     const [showLocationPmsSB, setShowLocationPmsSB] = React.useState(false);
 
@@ -202,7 +219,10 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                         </Dialog>
                     </Portal>
                 ) : (
-                    <MapTilerMap ref={cameraRef} centerCoordinate={
+                    <MapTilerMap
+                        ref={mapRef}
+                        camRef={cameraRef}
+                        centerCoordinate={
                         location
                             ? [location.coords.longitude, location.coords.latitude]
                             : [116.397477, 39.908692]
@@ -215,10 +235,10 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                     <Appbar.Action icon="map-marker-distance" onPress={() => { }} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_LOCATION")}>
-                    <Appbar.Action icon={ isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} />
+                    <Appbar.Action icon={isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_SCREENSHOT")}>
-                    <Appbar.Action icon="cellphone-screenshot" onPress={() => { }} />
+                    <Appbar.Action icon="cellphone-screenshot" onPress={takeScreenshot} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_SEARCH")}>
                     <Appbar.Action icon="map-search-outline" onPress={() => { }} />
@@ -230,13 +250,26 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 visible={showLocationPmsSB}
                 onDismiss={() => setShowLocationPmsSB(false)}
                 action={{
-                    label: i18n.t("MAP_NO_LOCATION_OK"),
+                    label: i18n.t("GLOBAL_SB_OK"),
                     onPress: () => {
                         setShowLocationPmsSB(false);
                     },
                 }}
             >
                 {i18n.t("MAP_NO_LOCATION")}
+            </Snackbar>
+
+            <Snackbar
+                visible={showShotSB}
+                onDismiss={() => setShowShotSB(false)}
+                action={{
+                    label: i18n.t("GLOBAL_SB_OK"),
+                    onPress: () => {
+                        setShowShotSB(false);
+                    },
+                }}
+            >
+                {i18n.t("MAP_SCREENSHOT_DONE")}
             </Snackbar>
 
         </View>

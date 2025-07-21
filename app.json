@@ -11,7 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "我们需要您的位置来定位"
+        "NSLocationWhenInUseUsageDescription": "我们需要您的位置来定位",
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true,
+        "NSDocumentsFolderUsageDescription": "需要访问文档目录以保存备份",
+        "NSFileProviderDomainUsageDescription": "需要访问文件夹以保存备份"
       }
     },
     "android": {
@@ -24,7 +28,10 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.MANAGE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -53,6 +60,15 @@
           "locationWhenInUsePermission": "应用需要在使用期间访问您的位置信息以定位",
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-media-library",
+      [
+        "expo-build-properties",
+        {
+          "android":{
+            "abiFilters": ["arm64-v8a"]
+          }
         }
       ]
     ],
