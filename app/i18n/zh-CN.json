@@ -9,6 +9,8 @@
     "MAP_SEARCH": "搜索",
     "MAP_MISSING_API_KEY": "未填写 API 密钥",
     "MAP_MISSING_API_KEY_DESC": "请在设置中填写 Maptiler API 密钥",
+    "MAP_NO_LOCATION": "未授予定位权限",
+    "MAP_NO_LOCATION_OK": "知道了",
     "DIALOG_CONFIRM": "确认",
     "SETTINGS_MAP": "地图设置",
     "SETTINGS_MAP_KEY": "更改 Maptiler API 密钥",

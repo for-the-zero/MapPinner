@@ -1,35 +1,64 @@
-import { MapView, MapViewRef } from "@maplibre/maplibre-react-native";
+import { Camera, CameraRef, MapView, PointAnnotation } from "@maplibre/maplibre-react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Appbar, Button, Dialog, FAB, Portal, Text, Tooltip } from 'react-native-paper';
+import { Appbar, Button, Dialog, FAB, Portal, Snackbar, Text, Tooltip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from './i18n/i18n';
 
-const MapTilerMap = () => {
-    const [apiKey, setApiKey] = React.useState('');
-    const mapViewRef = React.useRef<MapViewRef>(null);
+const MapTilerMap = React.forwardRef<CameraRef, { centerCoordinate?: [number, number] }>(
+    ({ centerCoordinate }, ref) => {
+        const [apiKey, setApiKey] = React.useState('');
+        React.useEffect(() => {
+            const fetchApiKey = async () => {
+                const key = await AsyncStorage.getItem('map_key');
+                if(key){setApiKey(key);};
+            };
+            fetchApiKey();
+        }, []);
 
-    React.useEffect(() => {
-        const fetchApiKey = async () => {
-            const key = await AsyncStorage.getItem('map_key');
-            if(key){setApiKey(key)};
-        };
-        fetchApiKey();
-    }, []);
-
-    return (
-        <MapView
-            ref={mapViewRef}
-            style={{ flex: 1 }}
-            mapStyle={`https://api.maptiler.com/maps/019827ec-6d2f-77fc-9dce-19cb99a5851e/style.json?key=${apiKey}`}
-            logoEnabled={false}
-            attributionPosition={{ bottom: 8, right: 8 }}
-        >
-            
-        </MapView>
-    );
-};
+        return (
+            <View style={{ flex: 1, marginBottom: 80, }}>
+                <MapView
+                    style={{flex: 1,}}
+                    mapStyle={
+                        `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`
+                    }
+                    logoEnabled={false}
+                    attributionPosition={{ bottom: 8, right: 8 }}
+                >
+                    <Camera
+                        ref={ref}
+                        zoomLevel={14}
+                        centerCoordinate={centerCoordinate}
+                        animationMode="flyTo"
+                        animationDuration={1000}
+                    />
+                    {centerCoordinate && (
+                        <PointAnnotation
+                            id="user-location-marker"
+                            coordinate={centerCoordinate}
+                        >
+                            <View
+                                style={{
+                                    width: 15,
+                                    height: 15,
+                                    borderRadius: 15 / 2,
+                                    backgroundColor: '#007aff',
+                                    borderWidth: 2,
+                                    borderColor: 'white',
+                                }}
+                            />
+                        </PointAnnotation>
+                    )}
+                </MapView>
+                <TenCross />
+            </View>
+        );
+    }
+);
+MapTilerMap.displayName = 'MapTilerMap';
 
 const TenCross = () => {
     return (
@@ -78,13 +107,73 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     });
 
     const [isKeyMissing, setIsKeyMissing] = React.useState(false);
-    React.useEffect(()=>{
+    React.useEffect(() => {
         AsyncStorage.getItem('map_key').then(apiKey => {
-            if(!apiKey) {
+            if (!apiKey) {
                 setIsKeyMissing(true);
             };
         });
     }, []);
+
+    const cameraRef = React.useRef<CameraRef>(null);
+    const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
+    const [isLocating, setIsLocating] = React.useState(false);
+    const getUserLocation = async () => {
+        if (isLocating) {
+            return;
+        };
+        setIsLocating(true);
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            setShowLocationPmsSB(true);
+            return;
+        };
+        console.log('Getting user location...');
+        let location: Location.LocationObject | null = null;
+        try {
+            location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Highest,
+            });
+            console.log(location);
+        }catch (error){
+            console.error(error);
+            try{
+                location = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.High,
+                });
+            }catch (error){
+                console.error(error);
+                try{
+                    location = await Location.getLastKnownPositionAsync({});
+                }catch (error){
+                    console.error(error);
+                    setShowLocationPmsSB(true);
+                    return;
+                };
+            };
+        };
+        if(location){
+            setLocation(location);
+            setIsLocating(false);
+            cameraRef.current?.setCamera({
+                centerCoordinate: [location.coords.longitude, location.coords.latitude],
+                zoomLevel: 32,
+                animationMode: 'flyTo',
+                animationDuration: 1000,
+            });
+        };
+    };
+    React.useEffect(() => {
+        cameraRef.current?.setCamera({
+            centerCoordinate: [116.397477, 39.908692],
+            zoomLevel: 1,
+            animationDuration: 0,
+        });
+        getUserLocation();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    //  暴   力   解   决   (别删上面那个哦，小心eslint给你报个错，看起来可不舒服了)
+
+    const [showLocationPmsSB, setShowLocationPmsSB] = React.useState(false);
 
     return (
         <View style={{ flex: 1 }}>
@@ -92,11 +181,11 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 <Appbar.Action icon="menu" onPress={() => navigation.toggleDrawer()} />
                 <Appbar.Content title={i18n.t("TITLE_MAP")} />
             </Appbar.Header>
-            
+
             {
                 isKeyMissing ? (
                     <Portal>
-                        <Dialog visible={isKeyMissing} onDismiss={()=>{
+                        <Dialog visible={isKeyMissing} onDismiss={() => {
                             setIsKeyMissing(false);
                             navigation.navigate('Settings');
                         }}>
@@ -113,20 +202,20 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                         </Dialog>
                     </Portal>
                 ) : (
-                    <MapTilerMap />
+                    <MapTilerMap ref={cameraRef} centerCoordinate={
+                        location
+                            ? [location.coords.longitude, location.coords.latitude]
+                            : [116.397477, 39.908692]
+                    } />
                 )
             }
-
-            <TenCross />
 
             <Appbar style={styles.bottom} elevated={true}>
                 <Tooltip title={i18n.t("MAP_SELECTROUTE")}>
                     <Appbar.Action icon="map-marker-distance" onPress={() => { }} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_LOCATION")}>
-                    <Appbar.Action icon="crosshairs-gps" onPress={() => {
-                        // TODO:
-                    }} />
+                    <Appbar.Action icon={ isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_SCREENSHOT")}>
                     <Appbar.Action icon="cellphone-screenshot" onPress={() => { }} />
@@ -136,6 +225,20 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 </Tooltip>
                 <FAB icon='map-marker-plus-outline' style={styles.fab} onPress={() => { }} />
             </Appbar>
+
+            <Snackbar
+                visible={showLocationPmsSB}
+                onDismiss={() => setShowLocationPmsSB(false)}
+                action={{
+                    label: i18n.t("MAP_NO_LOCATION_OK"),
+                    onPress: () => {
+                        setShowLocationPmsSB(false);
+                    },
+                }}
+            >
+                {i18n.t("MAP_NO_LOCATION")}
+            </Snackbar>
+
         </View>
     );
 };

@@ -9,6 +9,8 @@
     "MAP_SEARCH": "Search",
     "MAP_MISSING_API_KEY": "Missing API Key",
     "MAP_MISSING_API_KEY_DESC": "Please enter your Maptiler API Key in the settings",
+    "MAP_NO_LOCATION": "Location permission not granted",
+    "MAP_NO_LOCATION_OK": "OK",
     "DIALOG_CONFIRM": "Confirm",
     "SETTINGS_MAP": "Map Settings",
     "SETTINGS_MAP_KEY": "Change Maptiler API Key",
