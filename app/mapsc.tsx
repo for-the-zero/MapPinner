@@ -4,16 +4,16 @@ import * as Location from 'expo-location';
 import * as MediaLibrary from 'expo-media-library';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Appbar, Button, Dialog, FAB, Portal, Snackbar, Text, Tooltip } from 'react-native-paper';
+import { Appbar, Button, Dialog, FAB, Portal, Searchbar, SegmentedButtons, Snackbar, Text, TextInput, Tooltip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from './i18n/i18n';
 
 type MapTilerMapProps = {
     camRef: React.RefObject<CameraRef | null>;
-    centerCoordinate?: [number, number];
+    userLocation?: [number, number] | null; // 仅用于标记
 };
 const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
-    ({ camRef, centerCoordinate }, ref) => {
+    ({ camRef, userLocation }, ref) => {
         const [apiKey, setApiKey] = React.useState('');
         React.useEffect(() => {
             const fetchApiKey = async () => {
@@ -35,12 +35,11 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                     <Camera
                         ref={camRef}
                         zoomLevel={14}
-                        centerCoordinate={centerCoordinate}
                         animationMode="flyTo"
                         animationDuration={1000}
                     />
-                    {centerCoordinate && (
-                        <PointAnnotation id="user-location-marker" coordinate={centerCoordinate}>
+                    {userLocation && (
+                        <PointAnnotation id="user-location-marker" coordinate={userLocation}>
                             <View
                                 style={{
                                     width: 15,
@@ -102,7 +101,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         },
         fab: {
             position: 'absolute',
-            right: 16,
+            right: 35,
             bottom: insets.bottom + 40,
         },
     });
@@ -117,8 +116,9 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     }, []);
 
     const cameraRef = React.useRef<CameraRef>(null);
-    const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
     const [isLocating, setIsLocating] = React.useState(false);
+    const [showLocationPmsSB, setShowLocationPmsSB] = React.useState(false);
+    const [userLocationCoords, setUserLocationCoords] = React.useState<[number, number] | null>(null);
     const getUserLocation = async () => {
         if (isLocating) {
             return;
@@ -154,11 +154,15 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             };
         };
         if (location) {
-            setLocation(location);
+            const coords: [number, number] = [
+                location.coords.longitude, 
+                location.coords.latitude
+            ];
+            setUserLocationCoords(coords);
             setIsLocating(false);
             cameraRef.current?.setCamera({
-                centerCoordinate: [location.coords.longitude, location.coords.latitude],
-                zoomLevel: 32,
+                centerCoordinate: coords,
+                zoomLevel: 15,
                 animationMode: 'flyTo',
                 animationDuration: 1000,
             });
@@ -190,7 +194,31 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         };
     };
 
-    const [showLocationPmsSB, setShowLocationPmsSB] = React.useState(false);
+    const [showSearchDia, setShowSearchDia] = React.useState(false);
+    const [searchMethod, setSearchMethod] = React.useState('name');
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchLatitude, setSearchLatitude] = React.useState('0');
+    const [searchLongitude, setSearchLongitude] = React.useState('0');
+    const goToPosition = () => {
+        switch(searchMethod){
+            case 'name':
+                // TODO:
+                break;
+            case 'position':
+                const position = [parseFloat(searchLongitude), parseFloat(searchLatitude)];
+                try{
+                    cameraRef.current?.setCamera({
+                        centerCoordinate: position,
+                        zoomLevel: 15,
+                        animationMode: 'flyTo',
+                        animationDuration: 1000,
+                    });
+                }catch(error){
+                    console.error(error);
+                };
+                break;
+        };
+    };
 
     return (
         <View style={{ flex: 1 }}>
@@ -222,11 +250,8 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                     <MapTilerMap
                         ref={mapRef}
                         camRef={cameraRef}
-                        centerCoordinate={
-                        location
-                            ? [location.coords.longitude, location.coords.latitude]
-                            : [116.397477, 39.908692]
-                    } />
+                        userLocation={userLocationCoords}
+                    />
                 )
             }
 
@@ -235,16 +260,105 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                     <Appbar.Action icon="map-marker-distance" onPress={() => { }} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_LOCATION")}>
-                    <Appbar.Action icon={isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} />
+                    <Appbar.Action icon={isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} disabled={isLocating} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_SCREENSHOT")}>
                     <Appbar.Action icon="cellphone-screenshot" onPress={takeScreenshot} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_SEARCH")}>
-                    <Appbar.Action icon="map-search-outline" onPress={() => { }} />
+                    <Appbar.Action icon="map-search-outline" onPress={() => {setShowSearchDia(true)}} />
                 </Tooltip>
                 <FAB icon='map-marker-plus-outline' style={styles.fab} onPress={() => { }} />
             </Appbar>
+
+            {
+                showSearchDia ? (
+                    <Portal>
+                        <Dialog visible={showSearchDia} onDismiss={() => setShowSearchDia(false)}>
+                            <Dialog.Title>{i18n.t("MAP_SEARCH_TITLE")}</Dialog.Title>
+                            <Dialog.Content>
+                                <SegmentedButtons
+                                    value={searchMethod}
+                                    onValueChange={setSearchMethod}
+                                    buttons={[
+                                        {
+                                            value: 'name',
+                                            label: i18n.t("MAP_SEARCH_METHOD_NAME"),
+                                        },
+                                        {
+                                            value: 'position',
+                                            label: i18n.t("MAP_SEARCH_METHOD_POSITION"),
+                                        },
+                                    ]}
+                                />
+                                {
+                                    searchMethod === 'name' ? (
+                                        <Searchbar
+                                            placeholder="Search"
+                                            onChangeText={setSearchQuery}
+                                            value={searchQuery}
+                                        />
+                                        // TODO:
+                                    ) : (
+                                        <View>
+                                            <View style={{
+                                                flexDirection: 'row',
+                                                gap: 10,
+                                                margin: 10,
+                                            }}>
+                                                <TextInput
+                                                    style={{
+                                                        flex: 1,
+                                                    }}
+                                                    label={i18n.t("MAP_SEARCH_POSITION_LONGITUDE")}
+                                                    value={searchLongitude.toString()}
+                                                    keyboardType="phone-pad"
+                                                    onChangeText={(text) => {
+                                                        if(!text){setSearchLongitude('0');return;};
+                                                        if(!/^[0-9.-]*$/.test(text)){setSearchLongitude('0');return;};
+                                                        if(text !== '0' && text.startsWith('0') && !text.startsWith('0.')){text = text.slice(1);};
+                                                        if(parseFloat(text) < -180){setSearchLongitude('-180');};
+                                                        if(parseFloat(text) > 180){setSearchLongitude('180');};
+                                                        if(text.split('.').length > 2){
+                                                            setSearchLongitude(text.split('.')[0]+'.'+text.split('.')[1]);
+                                                            return;
+                                                        };
+                                                        setSearchLongitude(text);
+                                                    }}
+                                                />
+                                                <TextInput
+                                                    style={{
+                                                        flex: 1,
+                                                    }}
+                                                    label={i18n.t("MAP_SEARCH_POSITION_LATITUDE")}
+                                                    value={searchLatitude.toString()}
+                                                    keyboardType="phone-pad"
+                                                    onChangeText={(text) => {
+                                                        if(!text){setSearchLatitude('0');return;};
+                                                        if(!/^[0-9.-]*$/.test(text)){setSearchLatitude('0');return;};
+                                                        if(text !== '0' && text.startsWith('0') && !text.startsWith('0.')){text = text.slice(1);};
+                                                        if(parseFloat(text) < -90){setSearchLatitude('-90');};
+                                                        if(parseFloat(text) > 90){setSearchLatitude('90');};
+                                                        if(text.split('.').length > 2){
+                                                            setSearchLatitude(text.split('.')[0]+'.'+text.split('.')[1]);
+                                                            return;
+                                                        };
+                                                        setSearchLatitude(text);
+                                                    }}
+                                                />
+                                            </View>
+                                            <Button onPress={() => {
+                                                setShowSearchDia(false);
+                                                goToPosition();
+                                            }}>{i18n.t("MAP_SEARCH_POSITION_GO")}</Button>
+                                        </View>
+                                    )
+                                }
+                            </Dialog.Content>
+                        </Dialog>
+                    </Portal>
+                ) : null
+            }
 
             <Snackbar
                 visible={showLocationPmsSB}
