@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as MediaLibrary from 'expo-media-library';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Appbar, Button, Dialog, FAB, Portal, Searchbar, SegmentedButtons, Snackbar, Text, TextInput, Tooltip } from 'react-native-paper';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Appbar, Button, Dialog, FAB, List, Portal, Searchbar, SegmentedButtons, Snackbar, Text, TextInput, Tooltip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from './i18n/i18n';
 
@@ -107,10 +107,13 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     });
 
     const [isKeyMissing, setIsKeyMissing] = React.useState(false);
+    const [apiKey, setApiKey] = React.useState('');
     React.useEffect(() => {
         AsyncStorage.getItem('map_key').then(apiKey => {
             if (!apiKey) {
                 setIsKeyMissing(true);
+            } else {
+                setApiKey(apiKey);
             };
         });
     }, []);
@@ -197,26 +200,44 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     const [showSearchDia, setShowSearchDia] = React.useState(false);
     const [searchMethod, setSearchMethod] = React.useState('name');
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchLoading, setSearchLoading] = React.useState(false);
+    const [searchResults, setSearchResults] = React.useState<any[]>([]);
     const [searchLatitude, setSearchLatitude] = React.useState('0');
     const [searchLongitude, setSearchLongitude] = React.useState('0');
-    const goToPosition = () => {
-        switch(searchMethod){
-            case 'name':
-                // TODO:
-                break;
-            case 'position':
-                const position = [parseFloat(searchLongitude), parseFloat(searchLatitude)];
-                try{
-                    cameraRef.current?.setCamera({
-                        centerCoordinate: position,
-                        zoomLevel: 15,
-                        animationMode: 'flyTo',
-                        animationDuration: 1000,
-                    });
-                }catch(error){
-                    console.error(error);
-                };
-                break;
+    const searchPlaces = async (query: string) => {
+        if(!query){return;};
+        setSearchLoading(true);
+        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${apiKey}&limit=10`;
+        try{
+            let response = await fetch(url);
+            let data = await response.json();
+            if(data.features.length === 0){
+                setSearchResults([]);
+                setSearchLoading(false);
+                return;
+            };
+            let results = data.features.map((feature: any) => ({
+                full_name: feature.place_name,
+                name: feature.text,
+                coordinates: feature.center,
+                relevance: feature.relevance,
+            }));
+            results.sort((a: any, b: any) => b.relevance - a.relevance);
+            setSearchResults(results);
+        }catch(error){console.error(error);};
+        setSearchLoading(false);
+    };
+    const goToPosition = (longitude: number, latitude: number) => {
+        const position = [longitude, latitude];
+        try{
+            cameraRef.current?.setCamera({
+                centerCoordinate: position,
+                zoomLevel: 15,
+                animationMode: 'flyTo',
+                animationDuration: 1000,
+            });
+        }catch(error){
+            console.error(error);
         };
     };
 
@@ -276,7 +297,8 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                     <Portal>
                         <Dialog visible={showSearchDia} onDismiss={() => setShowSearchDia(false)}>
                             <Dialog.Title>{i18n.t("MAP_SEARCH_TITLE")}</Dialog.Title>
-                            <Dialog.Content>
+                            <Dialog.ScrollArea>
+                                <ScrollView>
                                 <SegmentedButtons
                                     value={searchMethod}
                                     onValueChange={setSearchMethod}
@@ -293,12 +315,33 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                 />
                                 {
                                     searchMethod === 'name' ? (
-                                        <Searchbar
-                                            placeholder="Search"
-                                            onChangeText={setSearchQuery}
-                                            value={searchQuery}
-                                        />
-                                        // TODO:
+                                        <View>
+                                            <Searchbar
+                                                placeholder="Search"
+                                                onChangeText={(val) => {
+                                                    setSearchQuery(val);
+                                                    searchPlaces(val);
+                                                }}
+                                                value={searchQuery}
+                                                onClearIconPress={() => {setSearchQuery('');}}
+                                                loading={searchLoading}
+                                            />
+                                            {(searchResults.length > 0) ? (
+                                                <List.Section>
+                                                    {searchResults.map((result: any) => {return(
+                                                        <List.Item
+                                                            key={result.full_name}
+                                                            title={result.name}
+                                                            description={result.full_name}
+                                                            onPress={() => {
+                                                                setShowSearchDia(false);
+                                                                goToPosition(result.coordinates[0], result.coordinates[1]);
+                                                            }}
+                                                        />
+                                                    );})}
+                                                </List.Section>
+                                            ) : null}
+                                        </View>
                                     ) : (
                                         <View>
                                             <View style={{
@@ -349,12 +392,13 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                             </View>
                                             <Button onPress={() => {
                                                 setShowSearchDia(false);
-                                                goToPosition();
+                                                goToPosition(parseFloat(searchLongitude), parseFloat(searchLatitude));
                                             }}>{i18n.t("MAP_SEARCH_POSITION_GO")}</Button>
                                         </View>
                                     )
                                 }
-                            </Dialog.Content>
+                                </ScrollView>
+                            </Dialog.ScrollArea>
                         </Dialog>
                     </Portal>
                 ) : null
