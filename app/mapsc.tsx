@@ -40,12 +40,24 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
             return selected ? [selected] : [];
         }, [routes, isSelectRouteAll, selectedRoute]);
 
+        const [mapStyle, setMapStyle] = React.useState('streets-v2');
+        React.useEffect(() => {
+            AsyncStorage.getItem('map_style').then((value) => {
+                if(value){
+                    setMapStyle(value);
+                } else {
+                    setMapStyle('streets-v2');
+                    AsyncStorage.setItem('map_style', 'streets-v2');
+                };
+            });
+        }, []);
+
         return (
             <View style={{ flex: 1, marginBottom: 80 }}>
                 <MapView
                     ref={ref}
                     style={{ flex: 1 }}
-                    mapStyle={`https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`}
+                    mapStyle={`https://api.maptiler.com/maps/${mapStyle}/style.json?key=${apiKey}`}
                     logoEnabled={false}
                     compassEnabled={true}
                     attributionPosition={{ bottom: 8, right: 8 }}
@@ -337,7 +349,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         };
     };
     const [showSelectRouteDia, setShowSelectRouteDia] = React.useState(false);
-    const [selectedRoute, setSelectedRoute] = React.useState(0); //TODO: display routes
+    const [selectedRoute, setSelectedRoute] = React.useState(0);
     const [isSelectRouteAll, setIsSelectRouteAll] = React.useState(false);
     const [isAdding2Route, setIsAdding2Route] = React.useState(false);
     const add2Route = async() => {

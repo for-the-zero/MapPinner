@@ -30,7 +30,18 @@
     "GLOBAL_SB_OK": "知道了",
     "GLOBAL_COPIED": "已复制",
     "DIALOG_CONFIRM": "确认",
-    "SETTINGS_MAP": "地图设置",
+    "SETTINGS_MAP": "地图",
     "SETTINGS_MAP_KEY": "更改 Maptiler API 密钥",
-    "SETTINGS_MAP_KEY_DESC": "应用更改需要重启应用"
+    "SETTINGS_MAP_KEY_DESC": "应用更改需要重启应用",
+    "SETTINGS_MAP_STYLE": "地图样式",
+    "SETTINGS_MAP_STYLE_DESC": "更改地图样式需要重启应用",
+    "SETTINGS_MAP_LICENSE": "地图提供商",
+    "SETTINGS_DATA": "数据",
+    "SETTINGS_DATA_CLEAR": "清除数据",
+    "SETTINGS_DATA_COPY": "复制数据",
+    "SETTINGS_DATA_IMPORT": "导入数据",
+    "SETTINGS_MORE": "更多",
+    "SETTINGS_ABOUT": "关于",
+    "INFO_CODE": "源码",
+    "INFO_LIBS": "部分依赖库"
 }

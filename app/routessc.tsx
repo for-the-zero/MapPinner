@@ -13,7 +13,7 @@ type RouteType = {
 };
 
 const IconButton = ({ icon, onPress=(()=>{}), GangnamStyle={} }: { icon: string, onPress: ()=>void, GangnamStyle?: object }) => {
-    // 操你妈没有IconButton还得我自己封装
+    // 欸我操我才看到组件库有IconButton，我眼真瞎了
     return (
         <TouchableRipple
             onPress={onPress}
