@@ -4,13 +4,13 @@ import * as Location from 'expo-location';
 import * as MediaLibrary from 'expo-media-library';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Appbar, Button, Dialog, FAB, List, Portal, Searchbar, SegmentedButtons, Snackbar, Text, TextInput, Tooltip } from 'react-native-paper';
+import { Appbar, Button, Dialog, FAB, Icon, List, Portal, Searchbar, SegmentedButtons, Snackbar, Text, TextInput, Tooltip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import i18n from './i18n/i18n';
 
 type MapTilerMapProps = {
     camRef: React.RefObject<CameraRef | null>;
-    userLocation?: [number, number] | null; // 仅用于标记
+    userLocation?: [number, number] | null;
 };
 const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
     ({ camRef, userLocation }, ref) => {
@@ -30,6 +30,7 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                     style={{ flex: 1 }}
                     mapStyle={`https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`}
                     logoEnabled={false}
+                    compassEnabled={true}
                     attributionPosition={{ bottom: 8, right: 8 }}
                 >
                     <Camera
@@ -101,13 +102,20 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         },
         fab: {
             position: 'absolute',
-            right: 35,
+            //right: 35,
+            right: 16,
             bottom: insets.bottom + 40,
         },
     });
 
+    type RouteType = {
+        name: string;
+        points: any[];
+        color: string;
+    };
     const [isKeyMissing, setIsKeyMissing] = React.useState(false);
     const [apiKey, setApiKey] = React.useState('');
+    const [routes, setRoutes] = React.useState<RouteType[]>([]);
     React.useEffect(() => {
         AsyncStorage.getItem('map_key').then(apiKey => {
             if (!apiKey) {
@@ -117,6 +125,21 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             };
         });
     }, []);
+    const reflashRoutes = () => {
+        AsyncStorage.getItem('routes').then((routesStr) => {
+            if (routesStr && (typeof routesStr === 'string' && routesStr.length > 4)) {
+                if(routesStr !== JSON.parse(routesStr)){
+                    setRoutes(JSON.parse(routesStr));
+                };
+            } else {
+                console.log('No routes found, creating default route');
+                let defaultRoutes = [{ name: 'Default Route', points: [], color: '#0000FF' }];
+                setRoutes(defaultRoutes);
+                AsyncStorage.setItem('routes', JSON.stringify(defaultRoutes));
+            };
+        });
+    };
+    React.useEffect(() => {reflashRoutes();}, []);
 
     const cameraRef = React.useRef<CameraRef>(null);
     const [isLocating, setIsLocating] = React.useState(false);
@@ -171,15 +194,16 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             });
         };
     };
+    React.useEffect(() => {getUserLocation();}, []); // eslint-disable-line react-hooks/exhaustive-deps
     React.useEffect(() => {
-        cameraRef.current?.setCamera({
-            centerCoordinate: [116.397477, 39.908692],
-            zoomLevel: 1,
-            animationDuration: 0,
-        });
-        getUserLocation();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-    //  暴   力   解   决   (别删上面那个哦，小心eslint给你报个错，看起来可不舒服了)
+        setTimeout(()=>{
+            cameraRef.current?.setCamera({
+                centerCoordinate: [116.397477, 39.908692],
+                zoomLevel: 1,
+                animationDuration: 0,
+            });
+        }, 100);
+    }, []);
 
     const [showShotSB, setShowShotSB] = React.useState(false);
     const mapRef = React.useRef<MapViewRef>(null);
@@ -232,13 +256,27 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         try{
             cameraRef.current?.setCamera({
                 centerCoordinate: position,
-                zoomLevel: 15,
                 animationMode: 'flyTo',
                 animationDuration: 1000,
             });
         }catch(error){
             console.error(error);
         };
+    };
+    const [showSelectRouteDia, setShowSelectRouteDia] = React.useState(false);
+    const [selectedRoute, setSelectedRoute] = React.useState(0);
+    const [isSelectRouteAll, setIsSelectRouteAll] = React.useState(false);
+    const add2Route = async() => {
+        if(selectedRoute === -1){return;};
+        const centerCoordinate = await mapRef.current?.getCenter();
+        if(!centerCoordinate){return;};
+        let new_routes = [...routes];
+        new_routes[selectedRoute].points.push({latitude: centerCoordinate[1], longitude: centerCoordinate[0]});
+        setRoutes(new_routes);
+        AsyncStorage.setItem('routes', JSON.stringify(new_routes));
+        cameraRef.current?.setCamera({
+            centerCoordinate: [centerCoordinate[0], centerCoordinate[1]],
+        });
     };
 
     return (
@@ -278,7 +316,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
 
             <Appbar style={styles.bottom} elevated={true}>
                 <Tooltip title={i18n.t("MAP_SELECTROUTE")}>
-                    <Appbar.Action icon="map-marker-distance" onPress={() => { }} />
+                    <Appbar.Action icon="map-marker-distance" onPress={() => {setShowSelectRouteDia(true)}} />
                 </Tooltip>
                 <Tooltip title={i18n.t("MAP_LOCATION")}>
                     <Appbar.Action icon={isLocating ? "crosshairs" : "crosshairs-gps"} onPress={getUserLocation} disabled={isLocating} />
@@ -289,7 +327,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 <Tooltip title={i18n.t("MAP_SEARCH")}>
                     <Appbar.Action icon="map-search-outline" onPress={() => {setShowSearchDia(true)}} />
                 </Tooltip>
-                <FAB icon='map-marker-plus-outline' style={styles.fab} onPress={() => { }} />
+                <FAB icon='map-marker-plus-outline' style={styles.fab} disabled={isSelectRouteAll} onPress={add2Route} />
             </Appbar>
 
             {
@@ -403,6 +441,59 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                     </Portal>
                 ) : null
             }
+
+            {showSelectRouteDia ? (
+                <Portal>
+                    <Dialog visible={showSelectRouteDia} onDismiss={() => setShowSelectRouteDia(false)}>
+                        <Dialog.Title>{i18n.t("MAP_SELECTROUTE_TITLE")}</Dialog.Title>
+                        <Dialog.ScrollArea>
+                            <ScrollView>
+                                <Button
+                                    mode="elevated"
+                                    onPress={reflashRoutes}
+                                    style={{margin: 10, marginBottom: 0}}
+                                >
+                                    {i18n.t("MAP_SELECTROUTE_REFLASH")}
+                                </Button>
+                                <List.Section>
+                                    <List.Item
+                                        key='all'
+                                        title={i18n.t("MAP_SELECTROUTE_ALL")}
+                                        onPress={() => {
+                                            setIsSelectRouteAll(true);
+                                            setSelectedRoute(-1);
+                                            setTimeout(() => {
+                                                setShowSelectRouteDia(false);
+                                            }, 500);
+                                        }}
+                                        right={()=>(isSelectRouteAll ? (
+                                            <Icon source='check' size={20} />
+                                        ) : null)}
+                                    />
+                                    {routes.map((route, index) => {
+                                        return (
+                                            <List.Item
+                                                key={index}
+                                                title={route.name}
+                                                onPress={() => {
+                                                    setIsSelectRouteAll(false);
+                                                    setSelectedRoute(index);
+                                                    setTimeout(() => {
+                                                        setShowSelectRouteDia(false);
+                                                    }, 500);
+                                                }}
+                                                right={()=>(selectedRoute === index ? (
+                                                    <Icon source='check' size={20}/>
+                                                ) : null)}
+                                            />
+                                        );
+                                    })}
+                                </List.Section>
+                            </ScrollView>
+                        </Dialog.ScrollArea>
+                    </Dialog>
+                </Portal>
+            ) : null}
 
             <Snackbar
                 visible={showLocationPmsSB}
