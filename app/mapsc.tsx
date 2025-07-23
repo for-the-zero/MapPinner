@@ -264,19 +264,38 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         };
     };
     const [showSelectRouteDia, setShowSelectRouteDia] = React.useState(false);
-    const [selectedRoute, setSelectedRoute] = React.useState(0);
+    const [selectedRoute, setSelectedRoute] = React.useState(0); //TODO: display routes
     const [isSelectRouteAll, setIsSelectRouteAll] = React.useState(false);
     const add2Route = async() => {
         if(selectedRoute === -1){return;};
         const centerCoordinate = await mapRef.current?.getCenter();
         if(!centerCoordinate){return;};
         let new_routes = [...routes];
-        new_routes[selectedRoute].points.push({latitude: centerCoordinate[1], longitude: centerCoordinate[0]});
+        new_routes[selectedRoute].points.push({
+            latitude: centerCoordinate[1],
+            longitude: centerCoordinate[0],
+            name: await get_place_name([centerCoordinate[0], centerCoordinate[1]])
+        });
         setRoutes(new_routes);
         AsyncStorage.setItem('routes', JSON.stringify(new_routes));
         cameraRef.current?.setCamera({
             centerCoordinate: [centerCoordinate[0], centerCoordinate[1]],
         });
+    };
+    const get_place_name = async(coordinates: [number, number]) => {
+        const url = `https://api.maptiler.com/geocoding/${coordinates[0]},${coordinates[1]}.json?key=${apiKey}`;
+        try{
+            let response = await fetch(url);
+            let data = await response.json();
+            if(data.features.length !== 0){
+                return data.features[0].text;
+            } else {
+                return 'Unknown';
+            };
+        }catch(error){
+            console.error(error);
+            return 'Unknown';
+        };
     };
 
     return (

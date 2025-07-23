@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import { Appbar, Button, Dialog, Icon, List, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper';
@@ -11,7 +12,7 @@ type RouteType = {
     color: string;
 };
 
-const IconButton = ({ icon, onPress, GangnamStyle={} }: { icon: string, onPress: () => void, GangnamStyle?: object }) => {
+const IconButton = ({ icon, onPress=(()=>{}), GangnamStyle={} }: { icon: string, onPress: ()=>void, GangnamStyle?: object }) => {
     // 操你妈没有IconButton还得我自己封装
     return (
         <TouchableRipple
@@ -47,11 +48,13 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
         let new_routes = [...routes];
         new_routes.splice(index, 1);
         if(new_routes.length === 0){
-            new_routes = [{name: routeNameAdding, points: [], color: '#0000FF'}, ...new_routes];
+            new_routes = [{name: 'Default Route', points: [], color: '#0000FF'}, ...new_routes];
         };
         setRoutes(new_routes);
         AsyncStorage.setItem('routes', JSON.stringify(new_routes));
     };
+
+    const router = useRouter();
 
     return (
         <ScreenWrapper style={{ flex: 1 }}>
@@ -64,7 +67,7 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
                 <Button mode="elevated" onPress={() => {
                     setRouteNameAdding('');
                     setOpenAddDia(true);
-                }} style={{margin: 15}}>{i18n.t("ROUTE_ADD")}</Button>
+                }} style={{margin: 15, marginBottom: 0}}>{i18n.t("ROUTE_ADD")}</Button>
                 <Portal>
                     <Dialog visible={openAddDia} onDismiss={() => { setOpenAddDia(false); }}>
                         <Dialog.Title>{i18n.t("ROUTE_ADD")}</Dialog.Title>
@@ -99,7 +102,12 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
                             key={index}
                             title={route.name}
                             onPress={async() => {
-                                //TODO:
+                                router.push({
+                                    pathname: '/subpages/routeedit',
+                                    params: {
+                                        index: index,
+                                    }
+                                });
                             }}
                             right={() => (
                                 <View style={{flexDirection: 'row', gap: 5}}>
@@ -109,6 +117,14 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
                                         setNewRouteName(route.name);
                                     }} />
                                     <IconButton icon={'delete'} onPress={() => {deleteRoute(index)}} />
+                                    <IconButton icon='arrow-right' onPress={() => {
+                                        router.push({
+                                            pathname: '/subpages/routeedit',
+                                            params: {
+                                                index: index,
+                                            }
+                                        });
+                                    }} />
                                 </View>
                             )}
                         />
