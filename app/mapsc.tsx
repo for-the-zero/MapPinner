@@ -1,4 +1,4 @@
-import { Camera, CameraRef, MapView, MapViewRef, PointAnnotation } from "@maplibre/maplibre-react-native";
+import { Camera, CameraRef, LineLayer, MapView, MapViewRef, PointAnnotation, ShapeSource } from "@maplibre/maplibre-react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as MediaLibrary from 'expo-media-library';
@@ -11,9 +11,18 @@ import i18n from './i18n/i18n';
 type MapTilerMapProps = {
     camRef: React.RefObject<CameraRef | null>;
     userLocation?: [number, number] | null;
+    routes: RouteType[];
+    isSelectRouteAll: boolean;
+    selectedRoute: number;
 };
+type RouteType = {
+    name: string;
+    points: any[];
+    color: string;
+};
+
 const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
-    ({ camRef, userLocation }, ref) => {
+    ({ camRef, userLocation, routes, isSelectRouteAll, selectedRoute }, ref) => {
         const [apiKey, setApiKey] = React.useState('');
         React.useEffect(() => {
             const fetchApiKey = async () => {
@@ -22,6 +31,14 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
             };
             fetchApiKey();
         }, []);
+
+        const routesToDisplay = React.useMemo(() => {
+            if (isSelectRouteAll) {
+                return routes;
+            };
+            const selected = routes[selectedRoute];
+            return selected ? [selected] : [];
+        }, [routes, isSelectRouteAll, selectedRoute]);
 
         return (
             <View style={{ flex: 1, marginBottom: 80 }}>
@@ -53,6 +70,67 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                             />
                         </PointAnnotation>
                     )}
+                    {routesToDisplay.map((route, routeIndex) => {
+                        if (route.points.length === 0) {
+                            return null;
+                        };
+                        if (route.points.length === 1) {
+                            const singlePoint = route.points[0];
+                            return (
+                                <PointAnnotation
+                                    key={`point-single-${routeIndex}`}
+                                    id={`point-single-${routeIndex}`}
+                                    coordinate={[singlePoint.longitude, singlePoint.latitude]}
+                                >
+                                    <View style={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: 5,
+                                        backgroundColor: route.color
+                                    }} />
+                                </PointAnnotation>
+                            );
+                        };
+                        return (
+                            <React.Fragment key={`route-fragment-${routeIndex}`}>
+                                <ShapeSource
+                                    id={`routeSource${routeIndex}`}
+                                    shape={{
+                                        type: 'Feature',
+                                        geometry: {
+                                            type: 'LineString',
+                                            coordinates: route.points.map(p => [p.longitude, p.latitude]),
+                                        },
+                                        properties: {},
+                                    }}
+                                >
+                                    <LineLayer
+                                        id={`routeLine${routeIndex}`}
+                                        style={{
+                                            lineColor: route.color,
+                                            lineWidth: 5,
+                                            lineCap: 'round',
+                                            lineJoin: 'round',
+                                        }}
+                                    />
+                                </ShapeSource>
+                                {route.points.map((point, pointIndex) => (
+                                    <PointAnnotation
+                                        key={`point-${routeIndex}-${pointIndex}`}
+                                        id={`point-${routeIndex}-${pointIndex}`}
+                                        coordinate={[point.longitude, point.latitude]}
+                                    >
+                                        <View style={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: 5,
+                                            backgroundColor: route.color,
+                                        }} />
+                                    </PointAnnotation>
+                                ))}
+                            </React.Fragment>
+                        );
+                    })}
                 </MapView>
                 <TenCross />
             </View>
@@ -108,11 +186,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         },
     });
 
-    type RouteType = {
-        name: string;
-        points: any[];
-        color: string;
-    };
     const [isKeyMissing, setIsKeyMissing] = React.useState(false);
     const [apiKey, setApiKey] = React.useState('');
     const [routes, setRoutes] = React.useState<RouteType[]>([]);
@@ -266,10 +339,15 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     const [showSelectRouteDia, setShowSelectRouteDia] = React.useState(false);
     const [selectedRoute, setSelectedRoute] = React.useState(0); //TODO: display routes
     const [isSelectRouteAll, setIsSelectRouteAll] = React.useState(false);
+    const [isAdding2Route, setIsAdding2Route] = React.useState(false);
     const add2Route = async() => {
         if(selectedRoute === -1){return;};
         const centerCoordinate = await mapRef.current?.getCenter();
         if(!centerCoordinate){return;};
+        cameraRef.current?.setCamera({
+            centerCoordinate: [centerCoordinate[0], centerCoordinate[1]],
+        });
+        setIsAdding2Route(true);
         let new_routes = [...routes];
         new_routes[selectedRoute].points.push({
             latitude: centerCoordinate[1],
@@ -278,9 +356,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         });
         setRoutes(new_routes);
         AsyncStorage.setItem('routes', JSON.stringify(new_routes));
-        cameraRef.current?.setCamera({
-            centerCoordinate: [centerCoordinate[0], centerCoordinate[1]],
-        });
+        setIsAdding2Route(false);
     };
     const get_place_name = async(coordinates: [number, number]) => {
         const url = `https://api.maptiler.com/geocoding/${coordinates[0]},${coordinates[1]}.json?key=${apiKey}`;
@@ -329,6 +405,9 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                         ref={mapRef}
                         camRef={cameraRef}
                         userLocation={userLocationCoords}
+                        routes={routes}
+                        isSelectRouteAll={isSelectRouteAll}
+                        selectedRoute={selectedRoute}
                     />
                 )
             }
@@ -346,7 +425,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 <Tooltip title={i18n.t("MAP_SEARCH")}>
                     <Appbar.Action icon="map-search-outline" onPress={() => {setShowSearchDia(true)}} />
                 </Tooltip>
-                <FAB icon='map-marker-plus-outline' style={styles.fab} disabled={isSelectRouteAll} onPress={add2Route} />
+                <FAB icon='map-marker-plus-outline' style={styles.fab} disabled={isSelectRouteAll || isAdding2Route} onPress={add2Route} />
             </Appbar>
 
             {

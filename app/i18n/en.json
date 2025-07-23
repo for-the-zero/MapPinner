@@ -23,6 +23,7 @@
     "ROUTE_ADD": "Add Route",
     "ROUTE_ADD_DISC": "Input a name for your route",
     "ROUTE_RENAME": "Rename Route",
+    "ROUTE_TIP": "Tips: Remember to click to \"Refresh\" when you return to the map（*＾-＾*）",
     "ROUTEEDIT_TITLE": "Edit Route",
     "ROUTEEDIT_COLORSELECT": "Edit Route Color",
     "ROUTEEDIT_RENAME": "Rename Place",

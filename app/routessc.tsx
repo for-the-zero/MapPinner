@@ -57,7 +57,7 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
     const router = useRouter();
 
     return (
-        <ScreenWrapper style={{ flex: 1 }}>
+        <ScreenWrapper style={{ flex: 1 }} withScrollView={false}>
             <Appbar.Header elevated={true}>
                 <Appbar.Action icon="menu" onPress={() => navigation.toggleDrawer()} />
                 <Appbar.Content title={i18n.t("TITLE_ROUTE")} />
@@ -158,6 +158,18 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
                 </Portal>
 
             </ScreenWrapper>
+            <View style={{
+                height: 35,
+                padding: 5,
+                margin: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderColor: '#4a4a4a',
+                borderWidth: 3,
+                borderRadius: 100,
+            }}>
+                <Text>{i18n.t("ROUTE_TIP")}</Text>
+            </View>
         </ScreenWrapper>
     );
 };
