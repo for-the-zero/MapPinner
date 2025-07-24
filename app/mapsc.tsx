@@ -208,9 +208,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     const reflashRoutes = () => {
         AsyncStorage.getItem('routes').then((routesStr) => {
             if (routesStr && (typeof routesStr === 'string' && routesStr.length > 4)) {
-                if(routesStr !== JSON.parse(routesStr)){
-                    setRoutes(JSON.parse(routesStr));
-                };
+                setRoutes(JSON.parse(routesStr));
             } else {
                 console.log('No routes found, creating default route');
                 let defaultRoutes = [{ name: 'Default Route', points: [], color: '#0000FF' }];
@@ -282,7 +280,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 zoomLevel: 1,
                 animationDuration: 0,
             });
-        }, 100);
+        }, 50);
     }, []);
 
     const [showShotSB, setShowShotSB] = React.useState(false);
@@ -294,6 +292,11 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status === 'granted') {
                 await MediaLibrary.saveToLibraryAsync(uri);
+                cameraRef.current?.setCamera({
+                    centerCoordinate: await mapRef.current?.getCenter() || null,
+                    zoomLevel: await mapRef.current?.getZoom() || 15,
+                    animationDuration: 0,
+                });
                 setShowShotSB(true);
             };
         } catch (error) {
