@@ -510,8 +510,8 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                                         if(!text){setSearchLongitude('0');return;};
                                                         if(!/^[0-9.-]*$/.test(text)){setSearchLongitude('0');return;};
                                                         if(text !== '0' && text.startsWith('0') && !text.startsWith('0.')){text = text.slice(1);};
-                                                        if(parseFloat(text) < -180){setSearchLongitude('-180');};
-                                                        if(parseFloat(text) > 180){setSearchLongitude('180');};
+                                                        if(parseFloat(text) < -180){setSearchLongitude('-180');return;};
+                                                        if(parseFloat(text) > 180){setSearchLongitude('180');return;};
                                                         if(text.split('.').length > 2){
                                                             setSearchLongitude(text.split('.')[0]+'.'+text.split('.')[1]);
                                                             return;
@@ -530,8 +530,8 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                                         if(!text){setSearchLatitude('0');return;};
                                                         if(!/^[0-9.-]*$/.test(text)){setSearchLatitude('0');return;};
                                                         if(text !== '0' && text.startsWith('0') && !text.startsWith('0.')){text = text.slice(1);};
-                                                        if(parseFloat(text) < -90){setSearchLatitude('-90');};
-                                                        if(parseFloat(text) > 90){setSearchLatitude('90');};
+                                                        if(parseFloat(text) < -90){setSearchLatitude('-90');return;};
+                                                        if(parseFloat(text) > 90){setSearchLatitude('90');return;};
                                                         if(text.split('.').length > 2){
                                                             setSearchLatitude(text.split('.')[0]+'.'+text.split('.')[1]);
                                                             return;
