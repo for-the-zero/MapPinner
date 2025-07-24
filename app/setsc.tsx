@@ -48,15 +48,27 @@ const SettingsScreen = ({ navigation }: { navigation: any }) => {
 
                 <List.Subheader>{i18n.t("SETTINGS_MAP")}</List.Subheader>
                 <List.Item
+                    title={i18n.t("SETTINGS_MAP_LINK")}
+                    description='https://cloud.maptiler.com/account/keys/'
+                    left={(props) => (<List.Icon {...props} icon="login-variant" />)}
+                    onPress={() => {
+                        Linking.openURL('https://cloud.maptiler.com/account/keys/');
+                    }}
+                />
+                <List.Item
                     title={i18n.t("SETTINGS_MAP_KEY")}
                     left={(props) => (<List.Icon {...props} icon="key" />)}
-                    onPress={()=>{setKeyDiaVisible(true);}} 
+                    onPress={()=>{
+                        setKeyDiaVisible(true);
+                    }} 
                 />
                 <List.Item
                     title={i18n.t("SETTINGS_MAP_STYLE")}
                     left={(props) => (<List.Icon {...props} icon="looks" />)}
                     description={mapStyle}
-                    onPress={() => {setMapStyleDiaVisible(true);}}
+                    onPress={() => {
+                        setMapStyleDiaVisible(true);
+                    }}
                 />
 
                 <List.Subheader>{i18n.t("SETTINGS_DATA")}</List.Subheader>
@@ -85,27 +97,6 @@ const SettingsScreen = ({ navigation }: { navigation: any }) => {
                     title={i18n.t("SETTINGS_DATA_IMPORT")}
                     left={(props) => (<List.Icon {...props} icon="content-paste" />)}
                     onPress={() => {setImportDiaVisible(true);}}
-                />
-
-                <List.Subheader>{i18n.t("SETTINGS_MAP_LICENSE")}</List.Subheader>
-                {/* 很抱歉不小心挡住了右下角的按钮（虽然还点得到），就在这里补上吧 */}
-                <List.Item
-                    title="MapLibre React Native"
-                    description="https://maplibre.org/maplibre-react-native"
-                    left={(props) => (<List.Icon {...props} icon="map" />)}
-                    onPress={() => {Linking.openURL('https://maplibre.org/maplibre-react-native')}}
-                />
-                <List.Item
-                    title="MapTiler"
-                    description="https://www.maptiler.com/copyright/"
-                    left={(props) => (<List.Icon {...props} icon="copyright" />)}
-                    onPress={() => {Linking.openURL('https://www.maptiler.com/copyright/')}}
-                />
-                <List.Item
-                    title="OpenStreetMap contributors"
-                    description="https://www.openstreetmap.org/copyright"
-                    left={(props) => (<List.Icon {...props} icon="copyright" />)}
-                    onPress={() => {Linking.openURL('https://www.openstreetmap.org/copyright')}}
                 />
 
                 <List.Subheader>{i18n.t("SETTINGS_MORE")}</List.Subheader>
@@ -140,9 +131,10 @@ const SettingsScreen = ({ navigation }: { navigation: any }) => {
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => {
+                        <Button onPress={async () => {
                             setKeyDiaVisible(false);
-                            AsyncStorage.setItem('map_key', key);
+                            await AsyncStorage.setItem('map_key', key);
+                            await Updates.reloadAsync();
                         }}>{i18n.t("DIALOG_CONFIRM")}</Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -156,34 +148,38 @@ const SettingsScreen = ({ navigation }: { navigation: any }) => {
                         <List.Section>
                             <List.Item
                                 title={'aquarelle'}
-                                onPress={() => {
+                                onPress={async() => {
                                     setMapStyle('aquarelle');
                                     setMapStyleDiaVisible(false);
-                                    AsyncStorage.setItem('map_style', 'aquarelle');
+                                    await AsyncStorage.setItem('map_style', 'aquarelle');
+                                    await Updates.reloadAsync();
                                 }}
                             />
                             <List.Item
                                 title={'backdrop'}
-                                onPress={() => {
+                                onPress={async() => {
                                     setMapStyle('backdrop');
                                     setMapStyleDiaVisible(false);
-                                    AsyncStorage.setItem('map_style', 'backdrop');
+                                    await AsyncStorage.setItem('map_style', 'backdrop');
+                                    await Updates.reloadAsync();
                                 }}
                             />
                             <List.Item
                                 title={'outdoor-v2'}
-                                onPress={() => {
+                                onPress={async() => {
                                     setMapStyle('outdoor-v2');
                                     setMapStyleDiaVisible(false);
-                                    AsyncStorage.setItem('map_style', 'outdoor-v2');
+                                    await AsyncStorage.setItem('map_style', 'outdoor-v2');
+                                    await Updates.reloadAsync();
                                 }}
                             />
                             <List.Item
                                 title={'streets-v2'}
-                                onPress={() => {
+                                onPress={async() => {
                                     setMapStyle('streets-v2');
                                     setMapStyleDiaVisible(false);
-                                    AsyncStorage.setItem('map_style', 'streets-v2');
+                                    await AsyncStorage.setItem('map_style', 'streets-v2');
+                                    await Updates.reloadAsync();
                                 }}
                             />
                         </List.Section>

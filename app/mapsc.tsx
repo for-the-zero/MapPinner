@@ -32,14 +32,6 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
             fetchApiKey();
         }, []);
 
-        const routesToDisplay = React.useMemo(() => {
-            if (isSelectRouteAll) {
-                return routes;
-            };
-            const selected = routes[selectedRoute];
-            return selected ? [selected] : [];
-        }, [routes, isSelectRouteAll, selectedRoute]);
-
         const [mapStyle, setMapStyle] = React.useState('streets-v2');
         React.useEffect(() => {
             AsyncStorage.getItem('map_style').then((value) => {
@@ -82,7 +74,10 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                             />
                         </PointAnnotation>
                     )}
-                    {routesToDisplay.map((route, routeIndex) => {
+                    {routes.map((route, routeIndex) => {
+                        if (!isSelectRouteAll && selectedRoute !== routeIndex) {
+                            return null;
+                        }
                         if (route.points.length === 0) {
                             return null;
                         };
@@ -90,7 +85,7 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                             const singlePoint = route.points[0];
                             return (
                                 <PointAnnotation
-                                    key={`point-single-${routeIndex}`}
+                                    key={`point-single-${routeIndex}-${route.color}`}
                                     id={`point-single-${routeIndex}`}
                                     coordinate={[singlePoint.longitude, singlePoint.latitude]}
                                 >
@@ -128,7 +123,7 @@ const MapTilerMap = React.forwardRef<MapViewRef, MapTilerMapProps>(
                                 </ShapeSource>
                                 {route.points.map((point, pointIndex) => (
                                     <PointAnnotation
-                                        key={`point-${routeIndex}-${pointIndex}`}
+                                        key={`point-${routeIndex}-${pointIndex}-${route.color}`}
                                         id={`point-${routeIndex}-${pointIndex}`}
                                         coordinate={[point.longitude, point.latitude]}
                                     >

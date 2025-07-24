@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { useColorScheme, View } from 'react-native';
-import { Appbar, Button, Dialog, Icon, List, MD3DarkTheme, MD3LightTheme, PaperProvider, Portal, Snackbar, TouchableRipple, TextInput } from 'react-native-paper';
+import { Appbar, Button, Dialog, Icon, List, MD3DarkTheme, MD3LightTheme, PaperProvider, Portal, Snackbar, TextInput, TouchableRipple } from 'react-native-paper';
 import ColorPicker, { HueSlider, OpacitySlider, Panel1, Preview } from 'reanimated-color-picker';
 import i18n from '../i18n/i18n';
 import ScreenWrapper from '../tools/ScreenWrapper';
@@ -22,12 +22,12 @@ const RouteEditScreen = () => {
     const { theme } = useMaterial3Theme();
     const paperTheme = React.useMemo(() => colorScheme === 'dark' ? { ...MD3DarkTheme, colors: theme.dark } : { ...MD3LightTheme, colors: theme.light }, [colorScheme, theme]);
 
-    const { index_str } = useLocalSearchParams();
+    const { index: index_param } = useLocalSearchParams();
     let index = 0;
-    if (typeof index_str === 'string') {
-        index = parseInt(index_str, 10);
-    } else if (Array.isArray(index_str) && index_str.length > 0) {
-        index = parseInt(index_str[0], 10);
+    if (typeof index_param === 'string') {
+        index = parseInt(index_param, 10);
+    } else if (Array.isArray(index_param) && index_param.length > 0) {
+        index = parseInt(index_param[0], 10);
     };
 
     type RouteType = {
@@ -74,12 +74,11 @@ const RouteEditScreen = () => {
 
     return (
         <PaperProvider theme={paperTheme}>
+            <Appbar.Header elevated={true}>
+                <Appbar.BackAction onPress={() => {router.back();}} />
+                <Appbar.Content title={i18n.t("ROUTEEDIT_TITLE")} />
+            </Appbar.Header>
             <ScreenWrapper>
-                <Appbar.Header elevated={true}>
-                    <Appbar.BackAction onPress={() => {router.back();}} />
-                    <Appbar.Content title={i18n.t("ROUTEEDIT_TITLE")} />
-                </Appbar.Header>
-                
                 <Button mode='elevated' style={{margin: 15, marginBottom: 0}} onPress={()=>{
                     setColor(route?.color);
                     setShowColorDia(true);

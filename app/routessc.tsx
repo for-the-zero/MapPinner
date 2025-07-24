@@ -121,7 +121,7 @@ const RouteScreen = ({ navigation }: { navigation: any }) => {
                                         router.push({
                                             pathname: '/subpages/routeedit',
                                             params: {
-                                                index: index,
+                                                index_str: index.toString(),
                                             }
                                         });
                                     }} />

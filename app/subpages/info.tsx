@@ -17,25 +17,17 @@ const RouteEditScreen = () => {
 
     return (
         <PaperProvider theme={paperTheme}>
+            <Appbar.Header elevated={true}>
+                <Appbar.BackAction onPress={() => {router.back();}} />
+                <Appbar.Content title={i18n.t("SETTINGS_ABOUT")} />
+            </Appbar.Header>
             <ScreenWrapper>
-                <Appbar.Header elevated={true}>
-                    <Appbar.BackAction onPress={() => {router.back();}} />
-                    <Appbar.Content title={i18n.t("SETTINGS_ABOUT")} />
-                </Appbar.Header>
-
                 <List.Section>
 
-                    <List.Subheader>APP</List.Subheader>
                     <List.Item
                         title="MapPinner"
                         description="1.0.0"
                         left={() => (<Image source={require('../../assets/images/icon.png')} style={{ width: 100, height: 100, marginLeft: 16 }} />)}
-                    />
-                    <List.Item
-                        title="Version"
-                        description="1.0.0"
-                        onPress={() => {}}
-                        left={(props) => (<List.Icon {...props} icon="update" />)}
                     />
 
                     <List.Subheader>{i18n.t('INFO_CODE')}</List.Subheader>
@@ -50,6 +42,12 @@ const RouteEditScreen = () => {
                         description="Github Issues"
                         onPress={() => {Linking.openURL('https://github.com/for-the-zero/MapPinner/issues');}}
                         left={(props) => (<List.Icon {...props} icon="bug-outline" />)}
+                    />
+                    <List.Item
+                        title="Push Requests"
+                        description="Github Push Requests"
+                        onPress={() => {Linking.openURL('https://github.com/for-the-zero/MapPinner/pulls');}}
+                        left={(props) => (<List.Icon {...props} icon="source-merge" />)}
                     />
                     <List.Item
                         title="Releases" 
@@ -101,6 +99,27 @@ const RouteEditScreen = () => {
                         <List.Item title="react-native-safe-area-context" onPress={() => {}} />
                         <List.Item title="reanimated-color-picker" onPress={() => {}} />
                     </List.Accordion>
+
+                    <List.Subheader>{i18n.t("INFO_MAP_LICENSE")}</List.Subheader>
+                    {/* 很抱歉不小心挡住了右下角的按钮（虽然还点得到），就在这里补上吧 */}
+                    <List.Item
+                        title="MapLibre React Native"
+                        description="https://maplibre.org/maplibre-react-native"
+                        left={(props) => (<List.Icon {...props} icon="map" />)}
+                        onPress={() => {Linking.openURL('https://maplibre.org/maplibre-react-native')}}
+                    />
+                    <List.Item
+                        title="MapTiler"
+                        description="https://www.maptiler.com/copyright/"
+                        left={(props) => (<List.Icon {...props} icon="copyright" />)}
+                        onPress={() => {Linking.openURL('https://www.maptiler.com/copyright/')}}
+                    />
+                    <List.Item
+                        title="OpenStreetMap contributors"
+                        description="https://www.openstreetmap.org/copyright"
+                        left={(props) => (<List.Icon {...props} icon="copyright" />)}
+                        onPress={() => {Linking.openURL('https://www.openstreetmap.org/copyright')}}
+                    />
                 </List.Section>
             </ScreenWrapper>
         </PaperProvider>
