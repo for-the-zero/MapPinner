@@ -3,11 +3,9 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import React from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 import 'react-native-gesture-handler';
-import {
-    Drawer,
-    MD3DarkTheme, MD3LightTheme, PaperProvider,
-} from 'react-native-paper';
+import { Drawer, MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 import MapScreen from './mapsc';
 import RoutesScreen from './routessc';
@@ -34,6 +32,7 @@ export default function App() {
     });
     return (
         <PaperProvider theme={paperTheme}>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
             <DrawerNav.Navigator
                 screenOptions={{
                     headerShown: false,

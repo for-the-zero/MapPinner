@@ -331,13 +331,14 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         }catch(error){console.error(error);};
         setSearchLoading(false);
     };
-    const goToPosition = (longitude: number, latitude: number) => {
+    const goToPosition = async (longitude: number, latitude: number) => {
         const position = [longitude, latitude];
         try{
             cameraRef.current?.setCamera({
                 centerCoordinate: position,
                 animationMode: 'flyTo',
                 animationDuration: 1000,
+                zoomLevel: await mapRef.current?.getZoom() || 15,
             });
         }catch(error){
             console.error(error);
@@ -353,6 +354,9 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         if(!centerCoordinate){return;};
         cameraRef.current?.setCamera({
             centerCoordinate: [centerCoordinate[0], centerCoordinate[1]],
+            animationMode: 'flyTo',
+            animationDuration: 1000,
+            zoomLevel: await mapRef.current?.getZoom() || 15,
         });
         setIsAdding2Route(true);
         let new_routes = [...routes];
